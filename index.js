@@ -20,6 +20,11 @@ app.use("/api/attendance", attendanceRoutes)
 app.use("/api/employees", employeeRoutes)
 app.use("/api/uploads", uploadRoutes)
 
+// Root route
+app.get("/", (req, res) => {
+  res.json({ message: "Welcome to the Attendance API. Please use the /api routes." })
+})
+
 // Health check
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", message: "Server is running" })

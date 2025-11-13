@@ -51,7 +51,7 @@ export const markAttendance = async (req, res) => {
       const lateThreshold = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 15, 0); // 8:15:00 AM
 
       let timeStatus = "";
-      if (now > onTimeThreshold) {
+      if (now < onTimeThreshold) {
         timeStatus = "Early";
       } else if (now >= onTimeThreshold && now < lateThreshold) {
         timeStatus = "Good";
@@ -231,6 +231,39 @@ export const getTopPerformers = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch top performers" })
   }
 }
+
+// Get all attendance records
+export const getAllAttendance = async (req, res) => {
+  const db = admin.firestore();
+  try {
+    const snapshot = await db
+      .collection("attendance")
+      .orderBy("checkIn", "desc")
+      .get();
+
+    // Fetch employee details for each attendance record
+    const attendance = await Promise.all(
+      snapshot.docs.map(async (doc) => {
+        const attendanceData = doc.data();
+        const employeeDoc = await db.collection("employees").doc(attendanceData.employeeId).get();
+        const employeeData = employeeDoc.data();
+        
+        return {
+          id: doc.id,
+          ...attendanceData,
+          checkIn: attendanceData.checkIn?.toDate ? attendanceData.checkIn.toDate().toISOString() : attendanceData.checkIn,
+          checkOut: attendanceData.checkOut?.toDate ? attendanceData.checkOut.toDate().toISOString() : attendanceData.checkOut,
+          employeeName: employeeData?.name || 'Unknown',
+        };
+      })
+    );
+
+    res.json({ success: true, attendance });
+  } catch (error) {
+    console.error("Error fetching all attendance:", error);
+    res.status(500).json({ error: "Failed to fetch all attendance" });
+  }
+};
 
 // Delete attendance record
 export const deleteAttendance = async (req, res) => {

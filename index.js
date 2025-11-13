@@ -22,7 +22,7 @@ app.use("/api/uploads", uploadRoutes)
 
 // Root route
 app.get("/", (req, res) => {
-  res.json({ message: "Welcome to the Attendance API. Please use the /api routes." })
+  res.json({ message: "Welcome to the Attendance API. Please use the /api routes. V2" })
 })
 
 // Health check

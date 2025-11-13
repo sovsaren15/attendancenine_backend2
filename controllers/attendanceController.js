@@ -21,23 +21,40 @@ export const markAttendance = async (req, res) => {
       .where("checkIn", ">=", today)
       .where("checkIn", "<", tomorrow)
 
+    // --- Handle forgotten check-outs from previous days ---
+    const oldOpenAttendanceQuery = db
+      .collection("attendance")
+      .where("employeeId", "==", employeeId)
+      .where("checkOut", "==", null);
+
+    const oldSnapshot = await oldOpenAttendanceQuery.get();
+    for (const doc of oldSnapshot.docs) {
+      const checkInTime = doc.data().checkIn.toDate();
+      const hoursSinceCheckIn = (new Date() - checkInTime) / (1000 * 60 * 60);
+      // If check-in is older than 24 hours and still open
+      if (hoursSinceCheckIn > 24) {
+        await doc.ref.update({ status: "incomplete" });
+      }
+    }
+    // --- End of forgotten check-out handling ---
+
     const snapshot = await attendanceQuery.get()
 
     if (type === "check-in") {
-      if (!snapshot.empty) {
+      if (!snapshot.empty && snapshot.docs[0].data().status !== 'incomplete') {
         return res.status(400).json({ error: "You have already checked in today." })
       }
 
       // Determine time status
       const now = new Date();
-      const earlyThreshold = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 0, 0); // 8:00:00 AM
-      const lateThreshold = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 16, 0); // 8:16:00 AM
+      const onTimeThreshold = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 0, 0); // 8:00:00 AM
+      const lateThreshold = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 15, 0); // 8:15:00 AM
 
       let timeStatus = "";
-      if (now < earlyThreshold) {
+      if (now < onTimeThreshold) {
         timeStatus = "Early";
-      } else if (now >= earlyThreshold && now < lateThreshold) {
-        timeStatus = "Good";
+      } else if (now >= onTimeThreshold && now < lateThreshold) {
+        timeStatus = "On Time";
       } else {
         timeStatus = "Late";
       }
@@ -192,7 +209,7 @@ export const getTopPerformers = async (req, res) => {
         const checkOutTime = record.checkOut.toDate ? record.checkOut.toDate() : new Date(record.checkOut);
 
         const durationMs = checkOutTime - checkInTime
-        const standardWorkdayMs = 8 * 60 * 60 * 1000 // 8 hours
+        const standardWorkdayMs = 5 * 60 * 60 * 1000 // 5 hours
         if (durationMs > standardWorkdayMs) {
           const overtimeMs = durationMs - standardWorkdayMs
           stats[employeeId].overtimeHours += overtimeMs / (1000 * 60 * 60) // convert to hours

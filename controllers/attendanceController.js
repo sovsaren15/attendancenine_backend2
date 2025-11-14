@@ -34,7 +34,7 @@ export const markAttendance = async (req, res) => {
       // Check if the check-in was on a day before today
       if (checkInTime.toDateString() !== now.toDateString()) {
         const autoCheckOutTime = new Date(checkInTime);
-        autoCheckOutTime.setHours(17, 0, 0, 0); // Set to 5:00 PM on the same day as check-in
+        autoCheckOutTime.setHours(15, 0, 0, 0); // Set to 3:00 PM on the same day as check-in
 
         await doc.ref.update({
           checkOut: autoCheckOutTime,

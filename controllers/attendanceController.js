@@ -27,13 +27,19 @@ export const markAttendance = async (req, res) => {
       .where("employeeId", "==", employeeId)
       .where("checkOut", "==", null);
 
+    const now = new Date();
     const oldSnapshot = await oldOpenAttendanceQuery.get();
     for (const doc of oldSnapshot.docs) {
       const checkInTime = doc.data().checkIn.toDate();
-      const hoursSinceCheckIn = (new Date() - checkInTime) / (1000 * 60 * 60);
-      // If check-in is older than 24 hours and still open
-      if (hoursSinceCheckIn > 24) {
-        await doc.ref.update({ status: "incomplete" });
+      // Check if the check-in was on a day before today
+      if (checkInTime.toDateString() !== now.toDateString()) {
+        const autoCheckOutTime = new Date(checkInTime);
+        autoCheckOutTime.setHours(14, 0, 0, 0); // Set to 2:00 PM on the same day as check-in
+
+        await doc.ref.update({
+          checkOut: autoCheckOutTime,
+          status: "auto-completed", // Use a specific status for clarity
+        });
       }
     }
     // --- End of forgotten check-out handling ---
@@ -46,7 +52,6 @@ export const markAttendance = async (req, res) => {
       }
 
       // Determine time status
-      const now = new Date();
       const earlyThreshold = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 0, 0); // 8:00:00 AM
       const onTimeThreshold = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 15, 0); // 8:15:00 AM
 

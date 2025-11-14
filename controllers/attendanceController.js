@@ -47,15 +47,23 @@ export const markAttendance = async (req, res) => {
 
       // Determine time status
       const now = new Date();
-      const onTimeThreshold = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 0, 0); // 8:00:00 AM
-      const lateThreshold = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 15, 0); // 8:15:00 AM
+      const earlyThreshold = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 0, 0); // 8:00:00 AM
+      const onTimeThreshold = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 15, 0); // 8:15:00 AM
 
       let timeStatus = "";
-      if (now < onTimeThreshold) {
+      if (now < earlyThreshold) {
         timeStatus = "Early";
       } else if (now >= onTimeThreshold && now < lateThreshold) {
         timeStatus = "Good";
       } else {
+        timeStatus = "Late";
+      }
+
+      if (now < earlyThreshold) {
+        timeStatus = "Early";
+      } else if (now < onTimeThreshold) { // From 8:00:00 AM up to 8:14:59 AM
+        timeStatus = "Good";
+      } else { // 8:15:00 AM and later
         timeStatus = "Late";
       }
 

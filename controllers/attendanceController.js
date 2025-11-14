@@ -52,16 +52,16 @@ export const markAttendance = async (req, res) => {
       }
 
       // Determine time status
-      const earlyThreshold = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 0, 0); // 8:00:00 AM
-      const onTimeThreshold = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 15, 0); // 8:15:00 AM
+      const earlyThreshold = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 0, 0); // Before 8:00:00 AM is Early
+      const onTimeThreshold = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 15, 0); // 8:15:00 AM and after is Late
 
       let timeStatus = "";
-      if (now > earlyThreshold) {
+      if (now < earlyThreshold) { // e.g., 7:59 AM
         timeStatus = "Early";
-      } else if (now > onTimeThreshold) { // From 8:00:00 AM up to 8:14:59 AM
-        timeStatus = "Good";
-      } else { // 8:15:00 AM and later
+      } else if (now >= onTimeThreshold) { // e.g., 8:15 AM or later
         timeStatus = "Late";
+      } else { // Between 8:00:00 AM and 8:14:59 AM
+        timeStatus = "Good";
       }
 
       const attendanceRef = db.collection("attendance").doc()

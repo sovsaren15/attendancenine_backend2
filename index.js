@@ -5,6 +5,7 @@ import "./config/firebase.js" // Import to initialize Firebase
 import attendanceRoutes from "./routes/attendance.js"
 import employeeRoutes from "./routes/employees.js"
 import uploadRoutes from "./routes/uploads.js"
+import authRoutes from "./routes/auth.js"
 
 dotenv.config()
 
@@ -19,6 +20,7 @@ app.use(express.urlencoded({ extended: true }))
 app.use("/api/attendance", attendanceRoutes)
 app.use("/api/employees", employeeRoutes)
 app.use("/api/uploads", uploadRoutes)
+app.use("/api/auth", authRoutes)
 
 // Root route
 app.get("/", (req, res) => {

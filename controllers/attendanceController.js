@@ -28,20 +28,22 @@ export const markAttendance = async (req, res) => {
       .where("checkOut", "==", null);
 
     const now = new Date();
+    const batch = db.batch();
     const oldSnapshot = await oldOpenAttendanceQuery.get();
-    for (const doc of oldSnapshot.docs) {
+    oldSnapshot.docs.forEach(doc => {
       const checkInTime = doc.data().checkIn.toDate();
       // Check if the check-in was on a day before today
       if (checkInTime.toDateString() !== now.toDateString()) {
         const autoCheckOutTime = new Date(checkInTime);
         autoCheckOutTime.setHours(15, 0, 0, 0); // Set to 3:00 PM on the same day as check-in
 
-        await doc.ref.update({
+        batch.update(doc.ref, {
           checkOut: autoCheckOutTime,
           status: "auto-completed", // Use a specific status for clarity
         });
       }
-    }
+    });
+    await batch.commit(); // Commit all updates in a single batch
     // --- End of forgotten check-out handling ---
 
     const snapshot = await attendanceQuery.get()
